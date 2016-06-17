@@ -4,11 +4,11 @@ from alleycat.actors.actor import Actor
 
 
 class Human(Actor):
-    def __init__(self, position=None):
+    def __init__(self, name=None, position=None):
         if six.PY2:
-            super(Human, self).__init__(position)
+            super(Human, self).__init__(name, position)
         else:
-            super().__init__(position)
+            super().__init__(name, position)
         self.visited_positions = []
 
     def travel(self, positions):

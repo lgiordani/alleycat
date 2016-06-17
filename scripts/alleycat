@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 
+import collections
 from alleycat import graph as g
 from alleycat import helpers as hlp
 from alleycat.actors import cat as c, human as h
@@ -19,38 +20,52 @@ class Board(object):
         with open(connections_json_file) as f:
             connections_list = json.load(f)
 
-        # with open(stations_json_file) as f:
-        #     stations_list = json.load(f)
-
         self.map = g.Graph(connections_list=connections_list)
 
         # This is the list of all actors on the board
         self.actors = []
 
         # This is the list of (owner, cat) tuples
-        self.couples = []
+        self.chasing = []
 
-        # This is the number of current (owner, cat) tuples in play
-        self.num_couples = 0
+        # This is the list of spawned (owner, cat) tuples
+        self.spawned = []
 
-        # This is the number of owners who found their cat or
-        # that have moved more than 1e5 times without finding it
-        self.num_finished = 0
+        # This is the list of (owner, cat) tuples that rejoined
+        self.successful = []
+
+        # This is the list of "trapped" actors, i.e. stuck in a closed station
+        self.trapped = []
+
+        self.station_names = {}
+        if stations_json_file:
+            with open(stations_json_file) as f:
+                stations_list = json.load(f)
+
+            self.station_names = dict((index, name) for index, name in stations_list)
+
+    def _station_code2name(self, code):
+        try:
+            return self.station_names[code]
+        except KeyError:
+            return code
 
     def spawn_cats_and_owners(self, num):
         # This function can be called even during the game
-        self.num_couples += num
 
         # Get couples of random different positions
         positions = hlp.get_random_couples(num, self.map.get_nodes())
 
+        print(positions)
+
         for owner_position, cat_position in positions:
-            owner = h.Human(position=owner_position)
-            cat = c.Cat(position=cat_position)
+            owner = h.Human(name=len(self.chasing), position=owner_position)
+            cat = c.Cat(name=len(self.chasing), position=cat_position)
 
             self.actors.append(owner)
             self.actors.append(cat)
-            self.couples.append((owner, cat))
+            self.chasing.append((owner, cat))
+            self.spawned.append((owner, cat))
 
     def run_single_turn(self):
         # This runs one single turn of the game
@@ -59,40 +74,69 @@ class Board(object):
             # Find possible locations for the next position
             positions = self.map.get_node_neighbours(actor.position)
 
+            if len(positions) == 0 and actor not in self.trapped:
+                self.trapped.append(actor)
+
             # Move the actor
             actor.travel(positions)
 
         # This checks if some couple met or moved too many times
-
         finished_couples = []
-        for owner, cat in self.couples:
+        for owner, cat in self.chasing:
+            station = self._station_code2name(owner.position)
+
             if owner.position == cat.position:
                 # Remove it from the game
                 finished_couples.append((owner, cat))
 
                 # Release love!
-                print("LOVE!", owner.position, owner, cat)
+                print("Owner {name} found their cat! - Station {station} is now closed".format(name=owner.name,
+                                                                                               station=station))
                 self.map.remove_node_connections(owner.position)
 
-            if owner.moves == 1e5 or cat.moves == 1e5:
-                print("EXHAUSTED!", owner, cat)
-                finished_couples.append((owner, cat))
-
-        # Record finished couples
-        self.num_finished += len(finished_couples)
-        for owner, cat in finished_couples:
-            self.actors.remove(owner)
-            self.actors.remove(cat)
-            self.couples.remove((owner, cat))
+        return finished_couples
 
     def run(self):
         turns = 0
         while len(self.actors) != 0:
-            self.run_single_turn()
+            if turns == 1e5:
+                break
+
+            finished_couples = self.run_single_turn()
             turns += 1
 
             if turns % 1000 == 0:
-                print("TURNS: {} - COUPLES: {} - {}".format(turns, len(self.couples), [a.moves for a in self.actors]))
+                print("TURNS: {} - COUPLES: {}".format(turns, len(self.chasing)))
+
+            # Record finished couples
+            if len(finished_couples) != 0:
+                print("At turn {}".format(turns))
+
+                for owner, cat in finished_couples:
+                    self.actors.remove(owner)
+                    self.actors.remove(cat)
+                    self.chasing.remove((owner, cat))
+                    self.successful.append((owner, cat))
+
+        # Average number of moves of succesful owners
+        avg_moves = int(sum([owner.moves for owner, cat in self.successful]) / len(self.successful))
+
+        # Most visited station
+        all_visited_stations = collections.Counter()
+        for owner, cat in self.spawned:
+            all_visited_stations.update(owner.visited_positions)
+
+        print()
+        print("##### SUMMARY #######")
+        print()
+        print("Total number of cats in play:", len(self.spawned))
+        print("Total number of cats found:", len(self.successful))
+        print("Average number of movements required to find a cat:", avg_moves)
+        print("Most visited stations:")
+        for index, visits in all_visited_stations.most_common()[:3]:
+            print("  * {} had {} visits".format(self._station_code2name(index), visits))
+        print("Trapped actors:", [str(actor) for actor in self.trapped])
+        print()
 
 
 parser = argparse.ArgumentParser(description="Simulates a cat chase in London")
@@ -109,7 +153,7 @@ if args.connections_file is None:
     print("Please specify a connections file. Use --help to list available options.")
     sys.exit(1)
 
-b = Board(args.connections_file)
-b.spawn_cats_and_owners(100)
+b = Board(args.connections_file, args.stations_file)
+b.spawn_cats_and_owners(20)
 
 b.run()

@@ -6,6 +6,11 @@ def test_human_has_no_default_position():
 
     assert human.position is None
 
+def test_cat_init_accepts_name():
+    human = h.Human(name="Robert")
+
+    assert human.name == "Robert"
+    assert str(human) == "Human Robert"
 
 def test_human_with_not_routes_does_not_move():
     human = h.Human(position='A')
