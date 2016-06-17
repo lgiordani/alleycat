@@ -1,0 +1,115 @@
+import argparse
+import json
+import sys
+
+from alleycat import graph as g
+from alleycat import helpers as hlp
+from alleycat.actors import cat as c, human as h
+
+
+class Board(object):
+    """
+    This is the board where the whole simulation takes place.
+
+    It knows the map (Graph) and the actors (Cats and Humans)
+    and knows the matches between the two.
+    """
+
+    def __init__(self, connections_json_file, stations_json_file=None):
+        with open(connections_json_file) as f:
+            connections_list = json.load(f)
+
+        # with open(stations_json_file) as f:
+        #     stations_list = json.load(f)
+
+        self.map = g.Graph(connections_list=connections_list)
+
+        # This is the list of all actors on the board
+        self.actors = []
+
+        # This is the list of (owner, cat) tuples
+        self.couples = []
+
+        # This is the number of current (owner, cat) tuples in play
+        self.num_couples = 0
+
+        # This is the number of owners who found their cat or
+        # that have moved more than 1e5 times without finding it
+        self.num_finished = 0
+
+    def spawn_cats_and_owners(self, num):
+        # This function can be called even during the game
+        self.num_couples += num
+
+        # Get couples of random different positions
+        positions = hlp.get_random_couples(num, self.map.get_nodes())
+
+        for owner_position, cat_position in positions:
+            owner = h.Human(position=owner_position)
+            cat = c.Cat(position=cat_position)
+
+            self.actors.append(owner)
+            self.actors.append(cat)
+            self.couples.append((owner, cat))
+
+    def run_single_turn(self):
+        # This runs one single turn of the game
+
+        for actor in self.actors:
+            # Find possible locations for the next position
+            positions = self.map.get_node_neighbours(actor.position)
+
+            # Move the actor
+            actor.travel(positions)
+
+        # This checks if some couple met or moved too many times
+
+        finished_couples = []
+        for owner, cat in self.couples:
+            if owner.position == cat.position:
+                # Remove it from the game
+                finished_couples.append((owner, cat))
+
+                # Release love!
+                print("LOVE!", owner.position, owner, cat)
+                self.map.remove_node_connections(owner.position)
+
+            if owner.moves == 1e5 or cat.moves == 1e5:
+                print("EXHAUSTED!", owner, cat)
+                finished_couples.append((owner, cat))
+
+        # Record finished couples
+        self.num_finished += len(finished_couples)
+        for owner, cat in finished_couples:
+            self.actors.remove(owner)
+            self.actors.remove(cat)
+            self.couples.remove((owner, cat))
+
+    def run(self):
+        turns = 0
+        while len(self.actors) != 0:
+            self.run_single_turn()
+            turns += 1
+
+            if turns % 1000 == 0:
+                print("TURNS: {} - COUPLES: {} - {}".format(turns, len(self.couples), [a.moves for a in self.actors]))
+
+
+parser = argparse.ArgumentParser(description="Simulates a cat chase in London")
+parser.add_argument('-c', '--connections-file', action='store',
+                    help="Connections file (JSON)")
+parser.add_argument('-s', '--stations-file', action='store',
+                    help="Stations file (JSON)")
+parser.add_argument('--verbose', action='store_true',
+                    help="Be verbose")
+
+args = parser.parse_args()
+
+if args.connections_file is None:
+    print("Please specify a connections file. Use --help to list available options.")
+    sys.exit(1)
+
+b = Board(args.connections_file)
+b.spawn_cats_and_owners(100)
+
+b.run()

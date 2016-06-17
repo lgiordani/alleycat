@@ -5,13 +5,16 @@
 from setuptools import setup, find_packages
 
 requirements = [
+    'six'
 ]
 
 test_requirements = [
+    'pytest',
+    'tox'
 ]
 
 scripts = [
-
+    'scripts/alleycat'
 ]
 
 setup(
@@ -28,5 +31,5 @@ setup(
     zip_safe=False,
     test_suite='tests',
     tests_require=test_requirements,
-    scripts=scripts
+    scripts=scripts,
 )
