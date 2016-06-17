@@ -56,8 +56,6 @@ class Board(object):
         # Get couples of random different positions
         positions = hlp.get_random_couples(num, self.map.get_nodes())
 
-        print(positions)
-
         for owner_position, cat_position in positions:
             owner = h.Human(name=len(self.chasing), position=owner_position)
             cat = c.Cat(name=len(self.chasing), position=cat_position)
@@ -92,12 +90,15 @@ class Board(object):
                 # Release love!
                 print("Owner {name} found their cat! - Station {station} is now closed".format(name=owner.name,
                                                                                                station=station))
+                print("  * Number of movements performed by owner: {}".format(len(owner.path)))
+
                 self.map.remove_node_connections(owner.position)
 
         return finished_couples
 
     def run(self):
         turns = 0
+
         while len(self.actors) != 0:
             if turns == 1e5:
                 break
@@ -106,17 +107,14 @@ class Board(object):
             turns += 1
 
             if turns % 1000 == 0:
-                print("TURNS: {} - COUPLES: {}".format(turns, len(self.chasing)))
+                print("Already {} turns without owners finding their cat... ".format(turns))
 
             # Record finished couples
-            if len(finished_couples) != 0:
-                print("At turn {}".format(turns))
-
-                for owner, cat in finished_couples:
-                    self.actors.remove(owner)
-                    self.actors.remove(cat)
-                    self.chasing.remove((owner, cat))
-                    self.successful.append((owner, cat))
+            for owner, cat in finished_couples:
+                self.actors.remove(owner)
+                self.actors.remove(cat)
+                self.chasing.remove((owner, cat))
+                self.successful.append((owner, cat))
 
         # Average number of moves of succesful owners
         avg_moves = int(sum([owner.moves for owner, cat in self.successful]) / len(self.successful))
@@ -154,6 +152,6 @@ if args.connections_file is None:
     sys.exit(1)
 
 b = Board(args.connections_file, args.stations_file)
-b.spawn_cats_and_owners(20)
+b.spawn_cats_and_owners(200)
 
 b.run()
