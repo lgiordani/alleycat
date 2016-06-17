@@ -7,6 +7,8 @@ from alleycat import graph as g
 from alleycat import helpers as hlp
 from alleycat.actors import cat as c, human as h
 
+MAX_TURNS = 1e5
+
 
 class Board(object):
     """
@@ -19,6 +21,12 @@ class Board(object):
     def __init__(self, connections_json_file, stations_json_file=None):
         with open(connections_json_file) as f:
             connections_list = json.load(f)
+
+        # The current turn of the simulation
+        self.turn = 0
+
+        # The number of turns a station remains closed
+        self._closing_turns = None
 
         self.map = g.Graph(connections_list=connections_list)
 
@@ -37,6 +45,9 @@ class Board(object):
         # This is the list of "trapped" actors, i.e. stuck in a closed station
         self.trapped = []
 
+        # This is a dictionary of closed stations, the value is the closing turn
+        self.closed_stations = {}
+
         self.station_names = {}
         if stations_json_file:
             with open(stations_json_file) as f:
@@ -49,6 +60,22 @@ class Board(object):
             return self.station_names[code]
         except KeyError:
             return code
+
+    def _close_station(self, code):
+        self.map.remove_node_connections(code)
+        self.closed_stations[code] = self.turn
+
+    def _open_station(self, code):
+        self.map.restore_node_connections(code)
+        self.closed_stations.pop(code)
+
+    @property
+    def closing_turns(self):
+        return self._closing_turns
+
+    @closing_turns.setter
+    def closing_turns(self, num):
+        self._closing_turns = int(num)
 
     def spawn_cats_and_owners(self, num):
         # This function can be called even during the game
@@ -88,26 +115,21 @@ class Board(object):
                 finished_couples.append((owner, cat))
 
                 # Release love!
-                print("Owner {name} found their cat! - Station {station} is now closed".format(name=owner.name,
-                                                                                               station=station))
-                print("  * Number of movements performed by owner: {}".format(len(owner.path)))
-
-                self.map.remove_node_connections(owner.position)
+                print("Turn {turn} - Owner {name} found their cat! - Station {station} is now closed".format(
+                    turn=self.turn,
+                    name=owner.name,
+                    station=station))
+                self._close_station(owner.position)
 
         return finished_couples
 
     def run(self):
-        turns = 0
-
         while len(self.actors) != 0:
-            if turns == 1e5:
+            if self.turn == MAX_TURNS:
                 break
 
             finished_couples = self.run_single_turn()
-            turns += 1
-
-            if turns % 1000 == 0:
-                print("Already {} turns without owners finding their cat... ".format(turns))
+            self.turn += 1
 
             # Record finished couples
             for owner, cat in finished_couples:
@@ -116,7 +138,18 @@ class Board(object):
                 self.chasing.remove((owner, cat))
                 self.successful.append((owner, cat))
 
-        # Average number of moves of succesful owners
+            # Check closed stations
+            if self.closing_turns is not None:
+                opening_stations = [station for station, turn in self.closed_stations.items() if
+                                    self.turn - turn > self.closing_turns]
+                for station in opening_stations:
+                    print("Turn {turn} - Station {station} reopens clean and shiny".format(
+                        turn=self.turn,
+                        station=self._station_code2name(station),
+                    ))
+                    self._open_station(station)
+
+        # Average number of moves of successful owners
         avg_moves = int(sum([owner.moves for owner, cat in self.successful]) / len(self.successful))
 
         # Most visited station
@@ -130,10 +163,10 @@ class Board(object):
         print("Total number of cats in play:", len(self.spawned))
         print("Total number of cats found:", len(self.successful))
         print("Average number of movements required to find a cat:", avg_moves)
+        print()
         print("Most visited stations:")
         for index, visits in all_visited_stations.most_common()[:3]:
             print("  * {} had {} visits".format(self._station_code2name(index), visits))
-        print("Trapped actors:", [str(actor) for actor in self.trapped])
         print()
 
 
@@ -142,6 +175,8 @@ parser.add_argument('-c', '--connections-file', action='store',
                     help="Connections file (JSON)")
 parser.add_argument('-s', '--stations-file', action='store',
                     help="Stations file (JSON)")
+parser.add_argument('--closing-turns', action='store',
+                    help="Number of turns a station remains closed")
 parser.add_argument('--verbose', action='store_true',
                     help="Be verbose")
 
@@ -152,6 +187,7 @@ if args.connections_file is None:
     sys.exit(1)
 
 b = Board(args.connections_file, args.stations_file)
+b.closing_turns = args.closing_turns
 b.spawn_cats_and_owners(200)
 
 b.run()

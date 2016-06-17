@@ -21,9 +21,9 @@ def test_actor_init_accepts_position():
 
 
 def test_actor_can_travel():
-    positions = ['A', 'B', 'C', 'D', 'E', 'F']
+    positions = {'A', 'B', 'C', 'D', 'E', 'F'}
 
-    actor = a.Actor(position=positions[0])
+    actor = a.Actor(position='A')
     actor.travel(positions)
 
     assert actor.position in positions
@@ -31,7 +31,7 @@ def test_actor_can_travel():
 
 def test_actor_with_not_routes_does_not_move():
     actor = a.Actor(position='A')
-    actor.travel([])
+    actor.travel({})
 
     assert actor.position == 'A'
 
@@ -43,9 +43,9 @@ def test_actor_path_contains_initial_position():
 
 
 def test_actor_knows_their_path():
-    positions = ['A', 'B', 'C', 'D', 'E', 'F']
+    positions = {'A', 'B', 'C', 'D', 'E', 'F'}
 
-    actor = a.Actor(position=positions[0])
+    actor = a.Actor(position='A')
     for i in range(50):
         actor.travel(positions)
 
@@ -53,9 +53,9 @@ def test_actor_knows_their_path():
 
 
 def test_actor_knows_how_many_moves_they_did():
-    positions = ['A', 'B', 'C', 'D', 'E', 'F']
+    positions = {'A', 'B', 'C', 'D', 'E', 'F'}
 
-    actor = a.Actor(position=positions[0])
+    actor = a.Actor(position='A')
     for i in range(50):
         actor.travel(positions)
 

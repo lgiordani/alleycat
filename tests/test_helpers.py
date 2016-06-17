@@ -3,10 +3,8 @@ from alleycat import helpers as h
 
 def test_insert_multiple_values_in_dictionary():
     adict = {}
-
     h.insert_multiple_values(adict, 'akey', 'avalue')
-
-    assert adict == {'akey': ['avalue']}
+    assert adict == {'akey': {'avalue'}}
 
 
 def test_extract_n_random_couples_from_a_list():

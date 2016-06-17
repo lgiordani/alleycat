@@ -6,10 +6,9 @@ def insert_multiple_values(adict, key, value):
     sets the key with an empty list as value. Then inserts the new value."""
 
     if key not in adict:
-        adict[key] = []
+        adict[key] = set()
 
-    if value not in adict[key]:
-        adict[key].append(value)
+    adict[key].add(value)
 
 
 def get_random_couples(num, values):

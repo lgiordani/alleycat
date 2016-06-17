@@ -18,7 +18,7 @@ class Actor(object):
 
     def travel(self, positions):
         if len(positions) > 0:
-            self._set_position(random.choice(positions))
+            self._set_position(random.choice(list(positions)))
 
     def __str__(self):
         return "{} {}".format(self.__class__.__name__, self.name)

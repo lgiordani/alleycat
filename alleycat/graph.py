@@ -6,6 +6,7 @@ from alleycat import helpers as h
 class Graph(object):
     def __init__(self, connections_list):
         self._connections = {}
+        self._stored_connections = {}
 
         for connection in connections_list:
             self._set_connection(connection[0], connection[1])
@@ -30,8 +31,16 @@ class Graph(object):
         return self._connections[node_key]
 
     def remove_node_connections(self, node_key):
-        self._connections[node_key] = []
+        self._stored_connections[node_key] = self._connections[node_key]
+        self._connections[node_key] = set()
 
         for key in self._connections:
             if node_key in self._connections[key]:
                 self._connections[key].remove(node_key)
+
+    def restore_node_connections(self, node_key):
+        nodes = self._stored_connections.pop(node_key, [])
+
+        for node in nodes:
+            self._set_connection(node_key, node)
+
