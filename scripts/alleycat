@@ -206,11 +206,8 @@ class Board(object):
         print()
 
     def run(self):
-        while len(self.actors) != 0:
+        while len(self.actors) != 0 and self.turn < self.max_turns:
             self.run_single_turn()
-
-            if self.turn == self.max_turns:
-                break
             self.turn += 1
 
         self.print_report()

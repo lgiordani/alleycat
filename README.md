@@ -61,6 +61,54 @@ The `--use-owner-names` makes use of the `Faker` package to create names for the
 
 ## Examples
 
+This command line runs Alley Cat with the provided London tube map, spawning 200 cats (and relative owners) and lasts 100,000 turns (or until all cats have been found)
+
+```sh
+$ alleycat -c tfl_connections.json -s tfl_stations.json --num-cats 200
+Turn      4 - Owner 190 found their cat! - Station Kennington is now closed
+Turn      7 - Owner 52 found their cat! - Station Monument is now closed
+Turn      9 - Owner 41 found their cat! - Station Temple is now closed
+Turn     10 - Owner 121 found their cat! - Station Ealing Common is now closed
+Turn     12 - Owner 77 found their cat! - Station Notting Hill Gate is now closed
+Turn     12 - Owner 116 found their cat! - Station Bank is now closed
+Turn     17 - Owner 23 found their cat! - Station Ruislip Gardens is now closed
+Turn     28 - Owner 47 found their cat! - Station Mornington Crescent is now closed
+Turn     38 - Owner 62 found their cat! - Station Holborn is now closed
+Turn     62 - Owner 2 found their cat! - Station Mile End is now closed
+Turn     73 - Owner 87 found their cat! - Station Manor House is now closed
+Turn     81 - Owner 90 found their cat! - Station Baker Street is now closed
+Turn     89 - Owner 151 found their cat! - Station Royal Oak is now closed
+Turn     97 - Owner 129 found their cat! - Station Woodside Park is now closed
+Turn     98 - Owner 163 found their cat! - Station Hounslow West is now closed
+Turn    107 - Owner 53 found their cat! - Station Green Park is now closed
+Turn    112 - Owner 44 found their cat! - Station Gloucester Road is now closed
+Turn    114 - Owner 82 found their cat! - Station Whitechapel is now closed
+Turn    119 - Owner 43 found their cat! - Station All Saints is now closed
+Turn    127 - Owner 57 found their cat! - Station Rotherhithe is now closed
+Turn    135 - Owner 198 found their cat! - Station Hammersmith is now closed
+Turn    136 - Owner 183 found their cat! - Station Pimlico is now closed
+Turn    142 - Owner 24 found their cat! - Station Canning Town is now closed
+Turn    184 - Owner 36 found their cat! - Station Queensbury is now closed
+Turn    198 - Owner 104 found their cat! - Station Liverpool Street is now closed
+Turn    310 - Owner 7 found their cat! - Station Oxford Circus is now closed
+Turn    311 - Owner 179 found their cat! - Station Goodge Street is now closed
+Turn    386 - Owner 1 found their cat! - Station Mudchute is now closed
+Turn    435 - Owner 105 found their cat! - Station Canary Wharf is now closed
+
+##### SUMMARY #######
+
+Total number of cats in play: 200
+Total number of cats found: 29
+Average number of movements required to find a cat: 119
+Fastest owner 190 found the cat in 4 turns
+Slowest owner 105 found the cat in 435 turns
+
+Most visited stations:
+  * Hounslow West had 499635 visits
+  * Mansion House had 299980 visits
+  * Woodside Park had 299838 visits
+```
+
 This command line runs Alley Cat with the example map, spawning 20 cats (and relative owners). It uses auto generated owner names and runs for maximum 1000 turns.
 
 ```sh
@@ -84,7 +132,58 @@ Most visited stations:
   * Kenton had 231 visits
 ```
 
-When the simulation ends some metrics of the execution are printed.
+This command line runs Alley Cat with the example map, spawning 200 cats (and relative owners). Closed stations will be opened again after 400 turns.
+
+```sh
+Turn      3 - Owner 83 found their cat! - Station Embankment is now closed
+Turn      5 - Owner 4 found their cat! - Station Liverpool Street is now closed
+Turn     12 - Owner 15 found their cat! - Station Acton Town is now closed
+Turn     12 - Owner 187 found their cat! - Station Victoria is now closed
+Turn     13 - Owner 113 found their cat! - Station East India is now closed
+Turn     16 - Owner 0 found their cat! - Station Stockwell is now closed
+Turn     61 - Owner 58 found their cat! - Station Holborn is now closed
+Turn     62 - Owner 47 found their cat! - Station Prince Regent is now closed
+Turn     71 - Owner 8 found their cat! - Station Finchley Road is now closed
+Turn     77 - Owner 198 found their cat! - Station Kenton is now closed
+Turn     78 - Owner 178 found their cat! - Station Baker Street is now closed
+Turn     81 - Owner 73 found their cat! - Station Hammersmith is now closed
+Turn     88 - Owner 157 found their cat! - Station Perivale is now closed
+Turn     89 - Owner 125 found their cat! - Station Bank is now closed
+Turn    101 - Owner 18 found their cat! - Station South Kensington is now closed
+Turn    102 - Owner 141 found their cat! - Station East Ham is now closed
+Turn    122 - Owner 158 found their cat! - Station North Ealing is now closed
+Turn    136 - Owner 38 found their cat! - Station Highgate is now closed
+Turn    140 - Owner 81 found their cat! - Station Picadilly Circus is now closed
+Turn    157 - Owner 191 found their cat! - Station West Ham is now closed
+Turn    187 - Owner 164 found their cat! - Station Hyde Park Corner is now closed
+Turn    200 - Owner 12 found their cat! - Station Bermondsey is now closed
+Turn    247 - Owner 16 found their cat! - Station King's Cross St. Pancras is now closed
+Turn    277 - Owner 127 found their cat! - Station Lancaster Gate is now closed
+Turn    280 - Owner 171 found their cat! - Station North Acton is now closed
+Turn    284 - Owner 146 found their cat! - Station Waterloo is now closed
+Turn    375 - Owner 3 found their cat! - Station Canning Town is now closed
+Turn    404 - Station Embankment reopens clean and shiny
+Turn    406 - Station Liverpool Street reopens clean and shiny
+Turn    408 - Owner 186 found their cat! - Station Chalk Farm is now closed
+[...]
+Turn   7418 - Station King's Cross St. Pancras reopens clean and shiny
+Turn   7711 - Owner 62 found their cat! - Station Notting Hill Gate is now closed
+Turn   8112 - Station Notting Hill Gate reopens clean and shiny
+Turn   9227 - Owner 115 found their cat! - Station Neasden is now closed
+
+##### SUMMARY #######
+
+Total number of cats in play: 200
+Total number of cats found: 200
+Average number of movements required to find a cat: 2203
+Fastest owner 83 found the cat in 3 turns
+Slowest owner 115 found the cat in 8850 turns
+
+Most visited stations:
+  * Chalfont & Latimer had 6575 visits
+  * Moor Park had 4932 visits
+  * Elverson Road had 4415 visits
+```
 
 ## Internals
 
