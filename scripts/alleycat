@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import argparse
+import collections
 import json
 import sys
-import collections
 
 from faker import Factory
 
@@ -12,6 +14,7 @@ from alleycat import helpers as hlp
 from alleycat.actors import cat as c, human as h
 
 fake = Factory.create('en_GB')
+
 
 class Board(object):
     """

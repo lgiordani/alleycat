@@ -13,5 +13,6 @@ def test_extract_n_random_couples_from_a_list():
     # get_random_couples and its outputs
     couples = h.get_random_couples(100, ['A', 'B', 'C', 'D'])
 
+    assert len(couples) == 100
     for couple in couples:
         assert couple[0] != couple[1]

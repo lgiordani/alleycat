@@ -5,7 +5,8 @@
 from setuptools import setup, find_packages
 
 requirements = [
-    'six'
+    'six',
+    'fake-factory'
 ]
 
 test_requirements = [
