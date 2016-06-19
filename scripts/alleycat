@@ -1,0 +1,248 @@
+#!/usr/bin/env python
+
+import argparse
+import json
+import sys
+import collections
+
+from faker import Factory
+
+from alleycat import graph as g
+from alleycat import helpers as hlp
+from alleycat.actors import cat as c, human as h
+
+fake = Factory.create('en_GB')
+
+class Board(object):
+    """
+    This is the board where the whole simulation takes place.
+
+    It knows the map (Graph) and the actors (Cats and Humans)
+    and knows the matches between the two.
+    """
+
+    def __init__(self, connections_json_file, stations_json_file=None, use_owner_names=False):
+        with open(connections_json_file) as f:
+            connections_list = json.load(f)
+
+        # The current turn of the simulation (starts from one since humans are used to count from there)
+        self.turn = 1
+
+        # Whether to use indexes or names for owners
+        self.use_owner_names = use_owner_names
+
+        # Maximum number of turns of the whole simulation
+        self.max_turns = None
+
+        # The number of turns a station remains closed
+        self.closing_turns = None
+
+        # The underlying map of possible positions
+        self.map = g.Graph(connections_list=connections_list)
+
+        # This is the list of all actors on the board
+        self.actors = []
+
+        # This is the list of playing (owner, cat) tuples
+        self.chasing = []
+
+        # This is the list of (owner, cat) tuples that met and exited the game
+        self.successful = []
+
+        # This is the list of originally spawned (owner, cat) tuples
+        self.spawned = []
+
+        # This is a dictionary of closed stations, the value is the closing turn
+        self.closed_stations = {}
+
+        self.station_names = {}
+        if stations_json_file:
+            with open(stations_json_file) as f:
+                stations_list = json.load(f)
+
+            self.station_names = dict((index, name) for index, name in stations_list)
+
+    def _formatted_turn(self):
+        # Helper that returns an aligned string with the turn number
+        return str(self.turn).rjust(len(str(self.max_turns)))
+
+    def _station_code2name(self, code):
+        # Helper that translates a station code to a name
+        try:
+            return self.station_names[code]
+        except KeyError:
+            return code
+
+    def _close_station(self, code):
+        # Helper that closes the given station and records the closing turn
+        self.map.remove_node_connections(code)
+        self.closed_stations[code] = self.turn
+
+    def _open_station(self, code):
+        # Helper that opens the given station
+        self.map.restore_node_connections(code)
+        self.closed_stations.pop(code)
+
+    def _possible_moves(self, position):
+        # Helper that return the list of positions connected with the given one
+        return self.map.get_node_neighbours(position)
+
+    def _add_cat_owner(self, owner, cat):
+        # Helper that records a newly spawned couple
+
+        # Add to actors to let them move
+        self.actors.append(owner)
+        self.actors.append(cat)
+
+        # Add to currently chasing couples
+        self.chasing.append((owner, cat))
+
+        # Add to list of initially spawned couples
+        self.spawned.append((owner, cat))
+
+    def _del_cat_owner(self, owner, cat):
+        # Helper that sets a couple as successful
+
+        # Remove from actors, they finished the game
+        self.actors.remove(owner)
+        self.actors.remove(cat)
+
+        # Remove from currently chasing couples
+        self.chasing.remove((owner, cat))
+
+        # Add to list of successful couples
+        self.successful.append((owner, cat))
+
+    def spawn_cats_and_owners(self, num):
+        # This generates the given number of (owner, cat) position tuples,
+        # creates the relative players and places them on the map
+
+        # Get couples of random different positions
+        random_positions = hlp.get_random_couples(num, self.map.get_nodes())
+
+        for owner_position, cat_position in random_positions:
+            if self.use_owner_names:
+                owner_name = fake.name()
+            else:
+                owner_name = len(self.chasing)
+
+            owner = h.Human(name=owner_name, position=owner_position)
+            cat = c.Cat(position=cat_position)
+            self._add_cat_owner(owner, cat)
+
+    def run_single_turn(self):
+        # This runs one single turn of the game
+
+        # Move every actor on the map
+        for actor in self.actors:
+            # Find possible locations for the next position
+            positions = self._possible_moves(actor.position)
+
+            # Move the actor
+            actor.travel(positions)
+
+        # This checks if some couple met
+        successful_couples = []
+        for owner, cat in self.chasing:
+            if owner.position == cat.position:
+                # Remove it from the game
+                successful_couples.append((owner, cat))
+
+                # Release love!
+                print("Turn {turn} - Owner {name} found their cat! - Station {station} is now closed".format(
+                    turn=self._formatted_turn(),
+                    name=owner.name,
+                    station=self._station_code2name(owner.position)))
+                self._close_station(owner.position)
+
+        # Record finished couples
+        for successful_couple in successful_couples:
+            self._del_cat_owner(*successful_couple)
+
+        # Check if closed stations shall be reopened
+        if self.closing_turns is not None:
+            # Find stations that have been closed enough
+            opening_stations = [station for station, turn in self.closed_stations.items() if
+                                self.turn - turn > self.closing_turns]
+
+            # Open each one
+            for station in opening_stations:
+                print("Turn {turn} - Station {station} reopens clean and shiny".format(
+                    turn=self._formatted_turn(),
+                    station=self._station_code2name(station),
+                ))
+                self._open_station(station)
+
+    def print_report(self):
+        # Most visited station
+        all_visited_stations = collections.Counter()
+        for owner, cat in self.spawned:
+            all_visited_stations.update(owner.visited_positions)
+
+        print()
+        print("##### SUMMARY #######")
+        print()
+        print("Total number of cats in play:", len(self.spawned))
+        print("Total number of cats found:", len(self.successful))
+
+        if self.successful:
+            avg_moves = int(sum([owner.moves for owner, cat in self.successful]) / len(self.successful))
+            fastest_owner = self.successful[0][0]
+            slowest_owner = self.successful[-1][0]
+
+            print("Average number of movements required to find a cat:", avg_moves)
+            print("Fastest owner {} found the cat in {} turns".format(fastest_owner, fastest_owner.moves))
+            print("Slowest owner {} found the cat in {} turns".format(slowest_owner, slowest_owner.moves))
+        else:
+            print("No owners found their cat")
+
+        print()
+        print("Most visited stations:")
+        for index, visits in all_visited_stations.most_common()[:3]:
+            print("  * {} had {} visits".format(self._station_code2name(index), visits))
+        print()
+
+    def run(self):
+        while len(self.actors) != 0:
+            self.run_single_turn()
+
+            if self.turn == self.max_turns:
+                break
+            self.turn += 1
+
+        self.print_report()
+
+
+parser = argparse.ArgumentParser(description="Simulates a cat chase in London")
+parser.add_argument('-c', '--connections-file', action='store',
+                    help="Connections file (JSON)")
+parser.add_argument('-s', '--stations-file', action='store',
+                    help="Stations file (JSON)")
+parser.add_argument('-n', '--num-cats', action='store',
+                    help="Number of cats (and owners) to spawn", default='10')
+parser.add_argument('--closing-turns', action='store',
+                    help="Number of turns a station remains closed")
+parser.add_argument('--max-turns', action='store',
+                    help="Maximum number of turns of the simulation", default='100000')
+parser.add_argument('--use-owner-names', action='store_true',
+                    help="Use names for owners instead of indexes")
+
+args = parser.parse_args()
+
+if args.connections_file is None:
+    print("Please specify a connections file. Use --help to list available options.")
+    sys.exit(1)
+
+num_cats = int(args.num_cats)
+
+b = Board(args.connections_file, args.stations_file, use_owner_names=args.use_owner_names)
+
+if args.max_turns is not None:
+    b.max_turns = int(args.max_turns)
+
+if args.closing_turns is not None:
+    b.closing_turns = int(args.closing_turns)
+
+b.spawn_cats_and_owners(num_cats)
+
+b.run()
