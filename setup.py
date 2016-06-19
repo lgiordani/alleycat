@@ -20,7 +20,7 @@ scripts = [
 
 setup(
     name='alleycat',
-    version='0.0.1',
+    version='1.0.0',
     description="A cat chasing simulation",
     long_description="",
     author="Leonardo Giordani",
