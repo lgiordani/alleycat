@@ -61,12 +61,12 @@ def graph_json_errors():
 @pytest.fixture
 def graph_dictionary():
     return {
-        'A': ['B', 'C'],
-        'B': ['A', 'D'],
-        'C': ['A', 'D', 'E', 'F'],
-        'D': ['B', 'C', 'F'],
-        'E': ['C', 'F'],
-        'F': ['E', 'D', 'C']
+        'A': {'B', 'C'},
+        'B': {'A', 'D'},
+        'C': {'A', 'D', 'E', 'F'},
+        'D': {'B', 'C', 'F'},
+        'E': {'C', 'F'},
+        'F': {'E', 'D', 'C'},
     }
 
 
@@ -85,7 +85,7 @@ def test_build_graph_from_json_can_handle_data_errors(graph_json_errors, graph_d
 def test_graph_can_return_node_neighbours(graph_json):
     graph = g.Graph.from_json(graph_json)
 
-    assert graph.get_node_neighbours('C') == ['A', 'D', 'E', 'F']
+    assert graph.get_node_neighbours('C') == {'A', 'D', 'E', 'F'}
 
 
 def test_graph_can_return_nodes(graph_json):
@@ -99,12 +99,20 @@ def test_build_graph_can_remove_node_connections(graph_json):
     graph.remove_node_connections('C')
 
     expected_dictionary = {
-        'A': ['B'],
-        'B': ['A', 'D'],
-        'C': [],
-        'D': ['B', 'F'],
-        'E': ['F'],
-        'F': ['E', 'D']
+        'A': {'B'},
+        'B': {'A', 'D'},
+        'C': set(),
+        'D': {'B', 'F'},
+        'E': {'F'},
+        'F': {'E', 'D'}
     }
 
     assert graph.as_dict() == expected_dictionary
+
+
+def test_build_graph_can_restore_node_connections(graph_json, graph_dictionary):
+    graph = g.Graph.from_json(graph_json)
+    graph.remove_node_connections('C')
+    graph.restore_node_connections('C')
+
+    assert graph.as_dict() == graph_dictionary

@@ -1,15 +1,15 @@
-import random
+import six
 
-class Human(object):
-    def __init__(self, position=None):
+from alleycat.actors.actor import Actor
+
+
+class Human(Actor):
+    def __init__(self, name=None, position=None):
+        if six.PY2:
+            super(Human, self).__init__(name, position)
+        else:
+            super().__init__(name, position)
         self.visited_positions = []
-        self.path = []
-        self._set_position(position)
-
-    def _set_position(self, position):
-        self.position = position
-        if position is not None:
-            self.path.append(position)
 
     def travel(self, positions):
         good_positions = [i for i in positions if i != self.position and i not in self.visited_positions]
@@ -19,5 +19,7 @@ class Human(object):
             good_positions = positions
 
         self.visited_positions.append(self.position)
-        self._set_position(random.choice(good_positions))
-
+        if six.PY2:
+            super(Human, self).travel(good_positions)
+        else:
+            super().travel(good_positions)

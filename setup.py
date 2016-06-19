@@ -5,18 +5,22 @@
 from setuptools import setup, find_packages
 
 requirements = [
+    'six',
+    'fake-factory'
 ]
 
 test_requirements = [
+    'pytest',
+    'tox'
 ]
 
 scripts = [
-
+    'scripts/alleycat'
 ]
 
 setup(
     name='alleycat',
-    version='0.0.1',
+    version='1.0.0',
     description="A cat chasing simulation",
     long_description="",
     author="Leonardo Giordani",
@@ -28,5 +32,5 @@ setup(
     zip_safe=False,
     test_suite='tests',
     tests_require=test_requirements,
-    scripts=scripts
+    scripts=scripts,
 )
