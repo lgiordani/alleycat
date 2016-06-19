@@ -12,7 +12,8 @@ def test_actor_init_accepts_id():
     actor = a.Actor(name="Pixel")
 
     assert actor.name == "Pixel"
-    assert str(actor) == "Actor Pixel"
+    assert str(actor) == "Pixel"
+
 
 def test_actor_init_accepts_position():
     actor = a.Actor(position='aposition')
@@ -59,4 +60,4 @@ def test_actor_knows_how_many_moves_they_did():
     for i in range(50):
         actor.travel(positions)
 
-    assert actor.moves == 51
+    assert actor.moves == 50

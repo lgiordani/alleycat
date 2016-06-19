@@ -9,7 +9,8 @@ class Actor(object):
 
     @property
     def moves(self):
-        return len(self.path)
+        # This is the count of moves, not visited positions
+        return len(self.path) - 1
 
     def _set_position(self, position):
         self.position = position
@@ -21,4 +22,4 @@ class Actor(object):
             self._set_position(random.choice(list(positions)))
 
     def __str__(self):
-        return "{} {}".format(self.__class__.__name__, self.name)
+        return "{}".format(self.name)

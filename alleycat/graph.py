@@ -43,4 +43,3 @@ class Graph(object):
 
         for node in nodes:
             self._set_connection(node_key, node)
-
